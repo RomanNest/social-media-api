@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
 
 from user.serializers import UserSerializer, UserRetrieveSerializer
 
@@ -45,3 +46,13 @@ class UserListView(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         """Get list of buses"""
         return super().list(request, *args, **kwargs)
+
+
+class UserDetailView(ModelViewSet):
+    serializer_class = UserRetrieveSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    queryset = get_user_model()
+    lookup_field = "username"
+
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)

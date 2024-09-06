@@ -38,7 +38,6 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "email",
-            "password",
             "username",
             "bio",
             "is_staff",
