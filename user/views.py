@@ -1,4 +1,6 @@
 from django.contrib.auth import get_user_model
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -24,7 +26,7 @@ class ManageUserView(generics.RetrieveUpdateDestroyAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class UserListView(generics.ListAPIView):
+class UserListView(ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
@@ -43,8 +45,27 @@ class UserListView(generics.ListAPIView):
 
         return queryset.distinct()
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="email",
+                type={"type": "list", "items": {"type": "string"}},
+                description="Filter by email (ex ?email=<EMAIL>)",
+            ),
+            OpenApiParameter(
+                name="username",
+                type={"type": "list", "items": {"type": "string"}},
+                description="Filter by username (ex ?username=<USERNAME>)",
+            ),
+            OpenApiParameter(
+                name="bio",
+                type={"type": "list", "items": {"type": "string"}},
+                description="Filter by bio (ex ?bio=<BIO>)",
+            )
+        ]
+    )
     def list(self, request, *args, **kwargs):
-        """Get list of buses"""
+        """Get list of users"""
         return super().list(request, *args, **kwargs)
 
 
@@ -54,5 +75,16 @@ class UserDetailView(ModelViewSet):
     queryset = get_user_model()
     lookup_field = "username"
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="username",
+                description="Get info about user (ex user/<USERNAME>)",
+                type=OpenApiTypes.STR,
+
+            )
+        ]
+
+    )
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)

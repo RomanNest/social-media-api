@@ -23,7 +23,7 @@ urlpatterns = [
     path("token/verify/", TokenVerifyView.as_view(), name="token_verify"),
     path("logout/", TokenBlacklistView.as_view(), name="logout"),
     path("me/", ManageUserView.as_view(), name="manage_user"),
-    path("users/", UserListView.as_view(), name="users_list"),
+    path("users/", UserListView.as_view(actions={"get": "list"}), name="users_list"),
     path(
         "<str:username>/",
         UserDetailView.as_view(actions={"get": "retrieve"}),
