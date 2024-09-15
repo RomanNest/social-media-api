@@ -3,6 +3,7 @@ import uuid
 
 from django.db import models
 from django.utils.text import slugify
+from django.conf import settings
 
 from user.models import User
 
@@ -15,45 +16,15 @@ def post_image_file_path(instance: "Post", filename: str) -> pathlib.Path:
 
 class Follow(models.Model):
     follower = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="following",
+        User, on_delete=models.CASCADE, related_name="following"
     )
     following = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="followers",
+        User, on_delete=models.CASCADE, related_name="follower"
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
-    @staticmethod
-    def unique_follow(follower: str, following: str, error_to_raise):
-        if Follow.objects.filter(
-            follower__email=follower, following__email=following
-        ).exists():
-            raise error_to_raise("You have already followed this user")
-        return {"follower": follower, "following": following}
-
-    def clean(self):
-        Follow.unique_follow(
-            self.follower.email, self.following.email, ValueError
-        )
-
-    def save(
-            self,
-            force_insert=False,
-            force_update=False,
-            using=None,
-            update_fields=None,
-            *args, **kwargs
-    ):
-        self.full_clean()
-        return super(Follow, self).save(
-            force_insert, force_update, using, update_fields
-        )
-
     def __str__(self):
-        return f"{self.follower.email} follows {self.following.email}"
+        return f"{self.follower.email} starts following {self.following.email}"
 
     class Meta:
         ordering = ["-created_at"]
