@@ -4,6 +4,8 @@ from social_api.models import Post, Follow, Like, Comment
 
 
 class PostSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(slug_field="author", read_only=True)
+
     class Meta:
         model = Post
         fields = (
