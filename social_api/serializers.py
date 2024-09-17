@@ -4,7 +4,7 @@ from social_api.models import Post, Follow, Like, Comment
 
 
 class PostSerializer(serializers.ModelSerializer):
-    author = serializers.SlugRelatedField(slug_field="author", read_only=True)
+    author = serializers.CharField(source="author.username", read_only=True)
 
     class Meta:
         model = Post
@@ -94,7 +94,7 @@ class LikeRetrieveSerializer(LikeListSerializer):
         fields = ("id", "user", "created_at")
 
 
-class PostRetrieveSerializer(PostSerializer):
+class PostRetrieveSerializer(serializers.ModelSerializer):
     comments = CommentForRetrievePostSerializer(many=True, read_only=True)
     likes = LikeRetrieveSerializer(many=True, read_only=True)
 
