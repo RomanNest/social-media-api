@@ -6,6 +6,8 @@ from django.db import models
 from django.utils.text import slugify
 from django.utils.translation import gettext as _
 
+from social_media_api import settings
+
 
 class UserManager(BaseUserManager):
     """Define a model manager for User model with no username field."""
@@ -47,7 +49,8 @@ class UserManager(BaseUserManager):
 
 def profile_image_path(instance: "User", filename: str) -> pathlib.Path:
     filename = (
-        f"{slugify(instance.username)}-{uuid.uuid4()}" + pathlib.Path(filename).suffix
+        f"{slugify(instance.username)}-{uuid.uuid4()}"
+        + pathlib.Path(filename).suffix
     )
     return pathlib.Path("upload/users") / pathlib.Path(filename)
 
@@ -63,6 +66,12 @@ class User(AbstractUser):
     bio = models.TextField(null=True, blank=True)
     image = models.ImageField(
         _("image"), null=True, upload_to=profile_image_path,
+    )
+    user_followers = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, related_name="follower_users", blank=True
+    )
+    user_following = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, related_name="following_users", blank=True
     )
 
     USERNAME_FIELD = "email"
