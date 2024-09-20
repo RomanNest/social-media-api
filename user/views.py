@@ -1,11 +1,11 @@
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, logout
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from user.serializers import UserSerializer, UserRetrieveSerializer
+from user.serializers import UserSerializer, UserRetrieveSerializer, UserLogOutSerializer
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -92,4 +92,17 @@ class UserDetailView(ModelViewSet):
     def get_queryset(self):
         return get_user_model().objects.prefetch_related(
             "user_followers", "user_following",
+        )
+
+
+class LogOutUserView(generics.GenericAPIView):
+    serializer_class = UserLogOutSerializer
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        logout(request)
+        user.save()
+        return Response(
+            {"status": "You have logged out"},
+            status=status.HTTP_204_NO_CONTENT,
         )

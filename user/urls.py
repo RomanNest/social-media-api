@@ -10,7 +10,7 @@ from user.views import (
     CreateUserView,
     ManageUserView,
     UserListView,
-    UserDetailView,
+    UserDetailView, LogOutUserView,
 )
 
 from social_api.views import FollowUserView, UnfollowUserView
@@ -25,6 +25,7 @@ urlpatterns = [
     path("token/verify/", TokenVerifyView.as_view(), name="token_verify"),
     path("logout/", TokenBlacklistView.as_view(), name="logout"),
     path("me/", ManageUserView.as_view(), name="manage_user"),
+    path("me/logout/", LogOutUserView.as_view(), name="logout_user"),
     path(
         "users/",
         UserListView.as_view(actions={"get": "list"}),

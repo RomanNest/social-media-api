@@ -48,3 +48,17 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
             "following",
             "image",
         ]
+
+
+class UserLogOutSerializer(serializers.Serializer):
+    class Meta:
+        model = get_user_model()
+        fields = ["email", "password"]
+        extra_kwargs = {
+            "password": {
+                "write_only": True,
+                "style": {"input_type": "password"},
+                "min_length": 5,
+                "label": _("Password"),
+            }
+        }
