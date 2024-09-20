@@ -33,6 +33,9 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserRetrieveSerializer(serializers.ModelSerializer):
+    followers = serializers.IntegerField(source="following.count", read_only=True)
+    following = serializers.IntegerField(source="follower.count", read_only=True)
+
     class Meta:
         model = get_user_model()
         fields = [
@@ -41,5 +44,7 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
             "username",
             "bio",
             "is_staff",
+            "followers",
+            "following",
             "image",
         ]
