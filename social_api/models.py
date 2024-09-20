@@ -3,7 +3,6 @@ import uuid
 
 from django.db import models
 from django.utils.text import slugify
-from django.conf import settings
 
 from user.models import User
 
@@ -23,8 +22,36 @@ class Follow(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
+    @staticmethod
+    def unique_follow(follower: str, following: str, error_to_raise) -> dict:
+        if follower == following:
+            raise error_to_raise("You can't follow yourself")
+        if Follow.objects.filter(
+            follower__username=follower, following__username=following
+        ).exists():
+            raise error_to_raise("You have already followed this user")
+        return {"follower": follower, "following": following}
+
+    def clean(self) -> None:
+        Follow.unique_follow(
+            self.follower.username, self.following.username, ValueError)
+
+    def save(
+            self,
+            force_insert=False,
+            force_update=False,
+            using=None,
+            update_fields=None,
+            *args,
+            **kwargs,
+    ):
+        self.full_clean()
+        super(Follow, self).save(
+            force_insert, force_update, using, update_fields,
+        )
+
     def __str__(self):
-        return f"{self.follower.email} starts following {self.following.email}"
+        return f"{self.follower.username} followed {self.following.username}"
 
     class Meta:
         ordering = ["-created_at"]

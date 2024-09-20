@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     extend_schema,
@@ -5,12 +6,10 @@ from drf_spectacular.utils import (
     OpenApiExample,
     extend_schema_view,
 )
-from rest_framework import viewsets, status, mixins
+from rest_framework import viewsets, status, mixins, generics
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet
 
 from social_api.models import Post, Comment, Like, Follow
 from social_api.serializers import (
@@ -21,7 +20,10 @@ from social_api.serializers import (
     CommentCreateSerializer,
     LikeSerializer,
     LikeCreateSerializer,
-    LikeListSerializer, FollowSerializer,
+    LikeListSerializer,
+    FollowSerializer,
+    FollowListSerializer,
+    FollowRetrieveSerializer,
 )
 
 
@@ -234,43 +236,100 @@ class LikeViewSet(
         serializer.save(user=self.request.user)
 
 
-class FollowViewSet(
-    mixins.CreateModelMixin,
-    mixins.DestroyModelMixin,
-    GenericViewSet,
-):
+# @extend_schema_view(
+#     destroy=extend_schema(
+#         summary="Delete a follow.",
+#         description="Admin can delete a specific follow.",
+#     )
+# )
+class FollowViewSet(viewsets.ModelViewSet):
     queryset = Follow.objects.all()
     serializer_class = FollowSerializer
-    permission_classes = [
-        IsAuthenticatedOrReadOnly,
-    ]
 
-    def perform_create(self, serializer):
-        serializer.save(follower=self.request.user)
+    def get_serializer_class(self):
+        if self.action == "list":
+            return FollowListSerializer
+        return FollowRetrieveSerializer
 
     def get_queryset(self):
-        queryset = Follow.objects.all().select_related("follower")
-        follower_id = self.request.query_params.get("follower_id")
-        if follower_id:
-            queryset = queryset.filter(follower_id=follower_id)
+        queryset = self.queryset
+        follower = self.request.query_params.get("follower")
+        following = self.request.query_params.get("following")
+        if follower:
+            queryset = queryset.filter(follower__username__icontains=follower)
+        if following:
+            queryset = queryset.filter(
+                following__username__icontains=following
+            )
+        if self.action in ("list", "retrieve"):
+            return queryset.select_related("follower", "following")
         return queryset
 
-    @action(detail=False, methods=["get"])
-    def followers(self, request):
-        """
-        Retrieve the list of followers for the authenticated user.
-        """
-        user = request.user
-        followers = Follow.objects.filter(following=user)
-        serializer = FollowSerializer(followers, many=True)
-        return Response(serializer.data)
+    @extend_schema(
+        methods=["GET"],
+        summary="Get list of all follows",
+        description="User can get a list of all follows",
+        parameters=[
+            OpenApiParameter(
+                name="follower",
+                description="Filter by follower username",
+                type=str,
+                examples=[OpenApiExample("example")]
+            ),
+            OpenApiParameter(
+                name="following",
+                description="Filter by following username",
+                type=str,
+                examples=[OpenApiExample("example")]
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
-    @action(detail=False, methods=["get"])
-    def following(self, request):
-        """
-        Retrieve the list of users followed by the authenticated user.
-        """
-        user = request.user
-        following = Follow.objects.filter(follower=user)
-        serializer = FollowSerializer(following, many=True)
-        return Response(serializer.data)
+
+class FollowUserView(generics.GenericAPIView, mixins.CreateModelMixin):
+    queryset = Follow.objects.all()
+    serializer_class = FollowSerializer
+
+    @extend_schema(
+        methods=["POST"],
+        summary="Follow a specific user.",
+        description="User can follow a specific user.",
+    )
+    def post(self, request, *args, **kwargs):
+        username = kwargs.get("username")
+        following = get_object_or_404(get_user_model(), username=username)
+        follower = request.user
+        follow_data = {"follower": follower.id, "following": following.id}
+        serializer = self.get_serializer(data=follow_data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {"detail": "Follow successful."}, status=status.HTTP_201_CREATED
+        )
+
+
+class UnfollowUserView(generics.GenericAPIView, mixins.DestroyModelMixin):
+    queryset = Follow.objects.all()
+    serializer_class = FollowSerializer
+
+    @extend_schema(
+        methods=["DELETE"],
+        summary="Unfollow a specific user.",
+        description="User can unfollow a specific user.",
+    )
+    def delete(self, request, *args, **kwargs):
+        username = kwargs.get("username")
+        following = get_object_or_404(get_user_model(), username=username)
+        follower = request.user
+        follow_instance = Follow.objects.filter(
+            follower=follower, following=following
+        ).first()
+        if follow_instance:
+            follow_instance.delete()
+
+        return Response(
+            {"detail": "Unfollow successful."},
+            status=status.HTTP_204_NO_CONTENT,
+        )

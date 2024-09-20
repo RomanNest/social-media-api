@@ -112,10 +112,35 @@ class PostRetrieveSerializer(serializers.ModelSerializer):
 
 
 class FollowSerializer(serializers.ModelSerializer):
-    follower = serializers.PrimaryKeyRelatedField(
-        read_only=True, default=serializers.CurrentUserDefault()
+    class Meta:
+        model = Follow
+        fields = ("id", "follower", "following", "created_at")
+
+    def validate(self, attrs):
+        Follow.unique_follow(
+            attrs["follower"].username,
+            attrs["following"].username,
+            serializers.ValidationError,
+        )
+        return attrs
+
+
+class FollowListSerializer(FollowSerializer):
+    follower = serializers.CharField(
+        source="follower.username",
+        read_only=True,
+    )
+    following = serializers.ReadOnlyField(
+        source="following.username",
+        read_only=True,
     )
 
     class Meta:
         model = Follow
-        fields = ("id", "follower", "following", "created_at")
+        fields = ("id", "follower", "following")
+
+
+class FollowRetrieveSerializer(FollowListSerializer):
+    class Meta:
+        model = Follow
+        exclude = ["id"]
