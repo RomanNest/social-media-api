@@ -236,12 +236,6 @@ class LikeViewSet(
         serializer.save(user=self.request.user)
 
 
-# @extend_schema_view(
-#     destroy=extend_schema(
-#         summary="Delete a follow.",
-#         description="Admin can delete a specific follow.",
-#     )
-# )
 class FollowViewSet(viewsets.ModelViewSet):
     queryset = Follow.objects.all()
     serializer_class = FollowSerializer
