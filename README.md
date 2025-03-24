@@ -9,11 +9,10 @@ This is the Social Media project API platform for creating managing user account
 3. **Docker Compose** - for developing the microservices;
 4. **Swagger & Redoc** - for API documentation.
 
-## THe main features:
+## The main features:
 * JWT authentication;
 * Logout;
 * Allow users to create, delete and managing their profiles, view another users profiles, update information and upload pictures;
-* Users can creat
 
 ## How to run:
 ### Using Docker
